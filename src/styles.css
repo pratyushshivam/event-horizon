@@ -983,8 +983,21 @@ input[type="range"]::-moz-range-thumb {
   }
 
   .hole-fact,
-  .wide {
+  .wide,
+  .holes.locked .hole:not([aria-pressed="true"]) {
     display: none;
+  }
+
+  .card-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    row-gap: 14px;
+  }
+
+  .card-stats > div,
+  .card-stats > div + div {
+    padding: 0 0 0 12px;
+    border-left: 1px solid var(--rule);
   }
 
   .clocks {

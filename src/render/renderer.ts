@@ -186,9 +186,10 @@ export class Renderer {
     const h = Math.max(64, Math.round(H * scale));
     this.ensureTargets(w, h, q.bloomLevels);
     this.frame++;
-    this.drawScene(s, q, this.scene!, 0, 0, 1);
+    this.drawScene(s, q, this.scene!, 0, 0, h / 1080);
     this.bloom(q.bloomLevels);
     this.present(s, null, W, H, (this.frame % 1024) / 1024);
+
   }
 
   /**
@@ -288,8 +289,8 @@ export class Renderer {
     gl.uniform1f(u.uOverlayGain!, 0.5 / s.exposure);
     gl.uniformMatrix3fv(u.uSky!, false, s.sky);
     gl.uniform1f(u.uSkyGain!, s.skyGain / 3);
-    gl.uniform1f(u.uStarGain!, (5.5 * s.starGain) / (starScale * starScale));
-    gl.uniform1f(u.uStarSize!, 0.62 * Math.max(1, starScale));
+    gl.uniform1f(u.uStarGain!, (5.5 * s.starGain) / Math.max(1, starScale * starScale));
+    gl.uniform1f(u.uStarSize!, 0.66 * Math.max(1, starScale));
     gl.uniform1f(u.uStep!, q.step);
     gl.uniform1i(u.uSteps!, q.steps);
     gl.uniform1f(u.uEncode!, this.float ? 0 : 1);
@@ -506,7 +507,7 @@ export function tileableNoise(size: number): Uint8Array {
           a[y * size + x]! += amp * (v00 + (v10 - v00) * sx + (v01 - v00) * sy + (v00 - v10 - v01 + v11) * sx * sy);
         }
       }
-      amp *= 0.55;
+      amp *= 0.68;
     }
   }
   for (let ch = 0; ch < 2; ch++) {

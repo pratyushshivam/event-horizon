@@ -764,30 +764,48 @@ let refresh = 16.7;
 let warm = 0;
 let adaptClock = 0;
 let goodChecks = 0;
+let ceiling = Infinity;
+let ceilingAge = 0;
+let windowFrames = 0;
+let windowLate = 0;
 
 function adapt(dtMs: number): void {
   ema += (Math.min(dtMs, 100) - ema) * 0.08;
   warm += dtMs;
-  if (warm < 1500) {
-    refresh = Math.max(6.9, Math.min(refresh, dtMs));
+  if (warm < 2500) {
+    if (warm > 600) refresh = Math.max(6.9, Math.min(refresh, dtMs));
     return;
   }
   if (fixedQuality || mode === "photo") return;
+  // Judge half a second at a time by how many frames came late, so one hitch
+  // (a tab switch, a shader compiling) does not count as being too slow.
+  const budget = Math.max(refresh, 1000 / 61);
+  windowFrames++;
+  if (dtMs > budget * 1.3) windowLate++;
   adaptClock += dtMs;
   if (adaptClock < 500) return;
-  adaptClock = 0;
-  const budget = Math.max(refresh, 1000 / 61) * 1.12;
-  if (ema > budget) {
+  const late = windowLate / windowFrames;
+  adaptClock = windowFrames = windowLate = 0;
+  const maxScale = coarse ? 1 : 1.5;
+  ceilingAge += 0.5;
+  if (ceilingAge > 45) ceiling = Infinity;
+  if (late > 0.08) {
+    // Remember this resolution as too much for a while.
     goodChecks = 0;
-    resScale = Math.max(0.34, resScale * (ema > budget * 1.5 ? 0.78 : 0.9));
+    ceiling = resScale;
+    ceilingAge = 0;
+    resScale = Math.max(0.34, resScale * (late > 0.5 ? 0.78 : 0.9));
     if (resScale <= 0.5 && tier !== "low") {
       tier = tier === "high" ? "medium" : "low";
       resScale = 0.62;
+      ceiling = Infinity;
     }
-  } else if (ema < budget * 0.93 && ++goodChecks >= 3) {
+  } else if (late < 0.04 && ++goodChecks >= 3) {
+    // Room to spare: sharpen, past the screen's own resolution if the card can.
     goodChecks = 0;
-    if (resScale < 1) resScale = Math.min(1, resScale * 1.06);
-    else if (tier !== "high" && !coarse) tier = tier === "low" ? "medium" : "high";
+    const limit = Math.min(maxScale, ceiling * 0.92);
+    if (resScale < limit) resScale = Math.min(limit, resScale * 1.06);
+    else if (tier !== "high" && !coarse && resScale >= 0.95) tier = tier === "low" ? "medium" : "high";
   }
 }
 
