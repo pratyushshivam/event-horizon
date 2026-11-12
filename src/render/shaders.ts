@@ -34,7 +34,7 @@ uniform float uDiskOut, uTpeak, uDiskGain;
 uniform vec3 uOrbX, uOrbY, uOrbN;
 uniform vec2 uPath[${PATH_POINTS}];
 uniform int uPathCount;
-uniform float uPathAlpha, uRingAlpha, uHomeAlpha, uHomeR, uOverlayGain;
+uniform float uPathAlpha, uRingAlpha, uHomeAlpha, uHomeR, uOverlayGain, uPathWarn;
 uniform mat3 uSky;
 uniform float uSkyGain, uStarGain, uStarSize;
 uniform float uStep;
@@ -65,9 +65,10 @@ vec3 blackbody(float kelvin){
 }
 
 float gasNoise(float a, float lr, float lod){
-  float n = textureLod(uNoiseTex, vec2(a*2., lr*2.6), lod+1.).r;
-  float m = textureLod(uNoiseTex, vec2(a*5.+.31, lr*9.+.17), lod+2.3).g;
-  return n*.62 + m*.38;
+  float n = textureLod(uNoiseTex, vec2(a*2., lr*2.6), lod+.5).r;
+  float m = textureLod(uNoiseTex, vec2(a*5.+.31, lr*9.+.17), lod+1.8).g;
+  float f = textureLod(uNoiseTex, vec2(a*13.+.63, lr*25.+.41), lod+2.6).r;
+  return n*.5 + m*.32 + f*.18;
 }
 
 // Light from the point p of the disk (radius rc), carried by a photon with
@@ -98,7 +99,7 @@ vec4 shadeDisk(vec3 p, float rc, float lz, float gCam, float pixWorld){
   float T = uTpeak*pow(max(F,1e-6),.25)*g;
   float g2 = g*g;
   vec3 col = blackbody(T)*F*g2*g2*mix(.16,1.7,lanes)*uDiskGain;
-  float alpha = edgeIn*edgeOut*clamp(.42+lanes*.8,0.,1.);
+  float alpha = edgeIn*edgeOut*clamp(.74+lanes*.5,0.,1.);
   return vec4(col*alpha, alpha);
 }
 
@@ -126,7 +127,7 @@ vec3 shadeOverlay(vec3 p, float rc, float px){
       float d = length(q-a-ab*t);
       if(d < best){ best = d; along = (float(i)+t)/float(uPathCount-1); }
     }
-    c += PAPER*lineMask(best,px)*(1.-along)*(1.-along)*.8*uPathAlpha;
+    c += mix(PAPER, vec3(1.,.2,.04)*1.5, uPathWarn)*lineMask(best,px)*(1.-along*along)*.8*uPathAlpha;
   }
   return c*uOverlayGain;
 }
@@ -260,7 +261,7 @@ void main(){
     if(foot < .012 && det > 1e-16){
       vec3 t1 = normalize(cross(dc, abs(dc.y)<.9?vec3(0,1,0):vec3(1,0,0)));
       vec3 t2 = cross(dc,t1);
-      const float H = .0049;
+      const float H = .0032;
       float inv = 1./det;
       vec3 st = starIn(dc + H*(t1+t2), dc, jx, jy, inv, a, bq, c);
       st = max(st, starIn(dc + H*(t1-t2), dc, jx, jy, inv, a, bq, c));

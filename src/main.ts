@@ -1,4 +1,5 @@
 import { C } from "./engine/constants";
+import { DISPLAY_PEAK_K } from "./engine/disk";
 import { HOLES, type Hole, type HoleScale, holeById, holeScale } from "./engine/holes";
 import { type Vec3, apparentDirection } from "./engine/light";
 import { type Controls, RULES, type Run, breakupRadius, isOver, newRun, resultOf, stepRun, tideGPerM } from "./engine/run";
@@ -30,7 +31,7 @@ const DISK_X: Vec3 = norm(cross(DISK_N, [0, 0, 1]));
 const DISK_Y: Vec3 = cross(DISK_N, DISK_X);
 const DISK_OUT = 10.5;
 const tune = (name: string, fallback: number) => (DEBUG && params.has(name) ? Number(params.get(name)) : fallback);
-const LOOK = { tPeak: tune("tp", 5200), diskGain: tune("dg", 0.4), exposure: tune("ex", 0.85), skyGain: tune("sg", 0.8) };
+const LOOK = { tPeak: tune("tp", DISPLAY_PEAK_K), diskGain: tune("dg", 0.5), exposure: tune("ex", 0.85), skyGain: tune("sg", 0.42), starGain: tune("st", 2.4) };
 
 // The sky is the one seen from Earth, turned so the Milky Way crosses behind
 // the hole in the opening view. Galactic centre and north galactic pole, J2000.
@@ -177,6 +178,8 @@ function updateCamera(dt: number): void {
 const pathBuf = new Float32Array(PATH_POINTS * 2);
 let pathCount = 0;
 let pathAge = 99;
+let pathPlunges = false;
+let pathWarn = 0;
 const hiddenSprite = (): Sprite => ({ x: 0, y: 0, visible: false, angle: 0, burn: 0, plumeAngle: 0, fade: 1, warmth: 1 });
 
 function basis(): { right: Vec3; up: Vec3; fwd: Vec3 } {
@@ -216,11 +219,14 @@ function buildScene(dt: number): Scene {
     pathAge = 0;
     const pts = predictPath(run.ship, PATH_POINTS, 1.1, 26);
     pathCount = Math.min(PATH_POINTS, pts.length);
+    pathPlunges = pts[pts.length - 1]!.r <= 1.01;
     for (let i = 0; i < pathCount; i++) {
       pathBuf[i * 2] = pts[i]!.x;
       pathBuf[i * 2 + 1] = pts[i]!.y;
     }
   }
+
+  pathWarn += ((pathPlunges ? 1 : 0) - pathWarn) * Math.min(1, dt * 6);
 
   const ship = hiddenSprite();
   const station = hiddenSprite();
@@ -275,6 +281,7 @@ function buildScene(dt: number): Scene {
     path: pathBuf,
     pathCount,
     pathAlpha: flying ? 1 : 0,
+    pathWarn,
     ringAlpha: mode === "fly" && rings ? 1 : 0,
     homeAlpha: showHome,
     homeR: RULES.homeR,
@@ -286,6 +293,7 @@ function buildScene(dt: number): Scene {
     grain: 0.02,
     diskGain: LOOK.diskGain,
     skyGain: LOOK.skyGain,
+    starGain: LOOK.starGain,
   };
 }
 
@@ -383,6 +391,7 @@ function updateHints(): void {
   const r = run.ship.r;
   if (run.fuel <= 0 && hintStage < 9) return setHint("The tanks are empty. The orbit you have is the one you keep.");
   if (run.air < RULES.air * 0.2 && r < RULES.homeGate) return setHint("Air is running low. Climb past the dashed ring.");
+  if (pathPlunges && r > 1.6 && run.fuel > 0) return setHint(coarse ? "The line ends in the hole. Drag right to climb." : "The line ends in the hole. Hold <kbd>→</kbd> to climb.");
   if (store.runs >= 2) return setHint("");
   if (hintStage === 0 && r < 11.2) hintStage = 1;
   if (hintStage === 1 && r < 7.5) hintStage = 2;
@@ -420,7 +429,7 @@ function updateHud(dt: number): void {
         ? `Earth is ${duration(gapS)} ahead of you`
         : "Earth’s clock has left you behind";
   el.r.textContent = nf(r, 2);
-  el.km.textContent = `${kilometres((r - 1) * scale.rsM)} above the horizon`;
+  el.km.innerHTML = `${kilometres((r - 1) * scale.rsM)}<span class="wide"> above the horizon</span>`;
   const v = s.r > 1 ? localSpeed(s) : 1;
   el.v.textContent = nf(v, 3);
   el.kms.textContent = `${nf((v * C) / 1000)} km/s`;
@@ -449,6 +458,7 @@ const RING_LABELS: Array<{ r: number; text: string; node?: HTMLSpanElement }> = 
 function updateLabels(scene: Scene): void {
   const show = mode === "fly" && rings && !ended;
   const camAz = Math.atan2(dot(camPos, ORB_Y), dot(camPos, ORB_X));
+  const placed: Array<{ node: HTMLSpanElement; x: number; y: number }> = [];
   RING_LABELS.forEach((l, i) => {
     if (!l.node) {
       l.node = document.createElement("span");
@@ -456,14 +466,17 @@ function updateLabels(scene: Scene): void {
       el.labels.append(l.node);
     }
     if (!show) return l.node.classList.remove("on");
-    const p = project(shipPos(l.r, camAz + 0.55 + i * 0.16), scene, scene.tanY);
-    l.node.classList.toggle("on", p.visible);
-    if (p.visible) {
-      const x = (p.x * 0.5 + 0.5) * canvas.clientWidth;
-      const y = (0.5 - p.y * 0.5) * canvas.clientHeight;
-      l.node.style.transform = `translate(${x.toFixed(1)}px, ${(y - 9).toFixed(1)}px)`;
-    }
+    const p = project(shipPos(l.r, camAz + 0.5 + i * 0.22), scene, scene.tanY);
+    const x = (p.x * 0.5 + 0.5) * canvas.clientWidth;
+    const y = (0.5 - p.y * 0.5) * canvas.clientHeight;
+    const ok = p.visible && x < canvas.clientWidth - 150;
+    l.node.classList.toggle("on", ok);
+    if (ok) placed.push({ node: l.node, x, y });
   });
+  // Rings seen edge-on crowd together: keep the names a line apart.
+  placed.sort((a, b) => a.y - b.y);
+  for (let i = 1; i < placed.length; i++) placed[i]!.y = Math.max(placed[i]!.y, placed[i - 1]!.y + 17);
+  for (const p of placed) p.node.style.transform = `translate(${p.x.toFixed(1)}px, ${(p.y - 9).toFixed(1)}px)`;
 }
 
 // ---------------------------------------------------------------- run control
@@ -519,7 +532,7 @@ function maybeShowCard(): void {
   }
   ui.classList.add("away");
   $("credit").classList.add("away");
-  showCard({ result, hole, departMs, best: store.best[hole.id], isBest, breakup: breakupRadius(scale), canvas, redraw: () => frame(0), onAgain: restart });
+  showCard({ result, hole, departMs, best: store.best[hole.id], isBest, breakup: breakupRadius(scale), scale, canvas, redraw: () => frame(0), onAgain: restart });
 }
 
 // ---------------------------------------------------------------- input
@@ -718,7 +731,7 @@ async function savePhoto(): Promise<void> {
     const side = Math.min(renderer.maxPhotoSide(), Number(params.get("photo")) || (coarse ? 2560 : 3840));
     const w = aspect >= 1 ? side : Math.round(side * aspect);
     const h = aspect >= 1 ? Math.round(side / aspect) : side;
-    const scene = { ...buildScene(0), pathAlpha: 0, ringAlpha: 0, homeAlpha: 0, ship: hiddenSprite(), station: hiddenSprite(), fade: 1, grain: 0.012 };
+    const scene = { ...buildScene(0), pathAlpha: 0, pathWarn: 0, ringAlpha: 0, homeAlpha: 0, ship: hiddenSprite(), station: hiddenSprite(), fade: 1, grain: 0.012 };
     const px = renderer.photograph(scene, w, h, coarse ? 6 : 12);
     const out = document.createElement("canvas");
     out.width = w;
@@ -842,6 +855,9 @@ if (DEBUG) {
     },
     get stats() {
       return { ema, tier, resScale, gpu: renderer.gpu, w: canvas.width, h: canvas.height, float: renderer.float, view, mode, ended, cardShown, firstBurnDone, lastPhoto };
+    },
+    get cam() {
+      return camPos;
     },
     controls,
     free,

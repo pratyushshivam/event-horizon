@@ -78,6 +78,32 @@ a {
   text-shadow: 0 1px 14px rgba(0, 0, 0, 0.85), 0 0 2px rgba(0, 0, 0, 0.6);
 }
 
+.ui::before,
+.ui::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 30vh;
+  pointer-events: none;
+}
+
+.ui::before {
+  top: 0;
+  background: linear-gradient(rgba(5, 5, 6, 0.62), rgba(5, 5, 6, 0));
+}
+
+.ui::after {
+  bottom: 0;
+  background: linear-gradient(rgba(5, 5, 6, 0), rgba(5, 5, 6, 0.7));
+}
+
+.top,
+.bottom,
+.hint {
+  z-index: 1;
+}
+
 .ui.away {
   opacity: 0;
 }
@@ -560,7 +586,7 @@ a {
   display: grid;
   place-items: center;
   padding: var(--pad);
-  background: radial-gradient(120% 90% at 50% 50%, rgba(5, 5, 6, 0.72), rgba(5, 5, 6, 0.9));
+  background: linear-gradient(100deg, rgba(5, 5, 6, 0.9) 20%, rgba(5, 5, 6, 0.62) 60%, rgba(5, 5, 6, 0.35));
   animation: fade-in 0.9s ease both;
   overflow-y: auto;
 }
@@ -935,9 +961,35 @@ input[type="range"]::-moz-range-thumb {
     row-gap: 14px;
   }
 
-  .clocks {
+  .brand {
+    display: contents;
+  }
+
+  .wordmark {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .tools {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .holes {
     grid-column: 1 / -1;
     grid-row: 2;
+    margin-top: -4px;
+    flex-wrap: nowrap;
+  }
+
+  .hole-fact,
+  .wide {
+    display: none;
+  }
+
+  .clocks {
+    grid-column: 1 / -1;
+    grid-row: 3;
   }
 
   .tools {

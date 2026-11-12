@@ -112,7 +112,7 @@ export function ending(result: Result, hole: Hole, departMs: number): { title: s
       return {
         title: "Home",
         lines: [
-          `Gone ${duration(result.shipS)} by your clock. On Earth, ${duration(result.earthS)} went by.`,
+          `Everyone at home lived ${duration(result.stolenS)} that you did not.`,
           ...missed(result.stolenS),
         ],
       };

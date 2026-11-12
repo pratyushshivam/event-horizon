@@ -1,6 +1,6 @@
 // The star catalogue, and the grid the shader looks stars up in.
 //
-// `public/sky/stars.bin` holds every star to magnitude 7 from the HYG
+// `public/sky/stars.bin` holds every star to magnitude 8 from the HYG
 // database, six bytes each: right ascension and declination as 16-bit
 // fractions, magnitude and B-V colour as bytes.
 //
@@ -22,7 +22,7 @@ export interface Star {
 }
 
 export const STAR_BYTES = 6;
-export const CELLS_PER_FACE = 96;
+export const CELLS_PER_FACE = 144;
 
 export function encodeStars(stars: readonly Star[]): Uint8Array {
   const out = new Uint8Array(stars.length * STAR_BYTES);
@@ -105,12 +105,12 @@ export function cubeDirection(face: number, u: number, v: number): Vec3 {
 
 /** Magnitude to byte and back, as stored in the grid. */
 const MAG_LO = -2;
-const MAG_SPAN = 9.5;
+const MAG_SPAN = 11;
 
 /**
  * Build the lookup grid: an RGBA8 image, six faces side by side, one texel
  * per cell. R,G: where the star sits inside its cell. B: brightness
- * (255 = magnitude -2, falling to 1 at magnitude 7.5; 0 = empty).
+ * (255 = magnitude -2, falling to 1 at magnitude 9; 0 = empty).
  * A: temperature, as a position in the blackbody table.
  */
 export function buildStarGrid(stars: readonly Star[], n = CELLS_PER_FACE): { data: Uint8Array; width: number; height: number; kept: number } {

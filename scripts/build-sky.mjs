@@ -1,12 +1,15 @@
 // Builds the two sky files in public/sky from their public sources.
 // Run once; the outputs are committed. Needs ffmpeg on the PATH.
 //
-//   node scripts/build-sky.mjs --exr starmap_2020_4k.exr --hyg hyg_v44.csv.gz
+//   node scripts/build-sky.mjs --exr milkyway_2020_4k.exr --hyg hyg_v44.csv.gz
 //
 // Sources
-//   starmap_2020_4k.exr   NASA/Goddard Space Flight Center Scientific Visualization Studio,
+//   milkyway_2020_4k.exr  NASA/Goddard Space Flight Center Scientific Visualization Studio,
 //                         "Deep Star Maps 2020", https://svs.gsfc.nasa.gov/4851
 //                         (Gaia DR2: ESA/Gaia/DPAC). NASA imagery, free to use with credit.
+//                         This is the layer without the bright stars: the glow of the
+//                         Milky Way and the faint stars only. The bright ones are drawn
+//                         from the catalogue, as points.
 //   hyg_v44.csv.gz        HYG database v4.4, David Nash, https://codeberg.org/astronexus/hyg
 //                         Creative Commons Attribution-ShareAlike 4.0.
 //
@@ -14,7 +17,8 @@
 //   public/sky/milkyway.jpg   the all-sky map, 4096 x 2048, right ascension along x
 //                             (0h at the centre, increasing to the left), north up.
 //                             Stored with a 2.2 gamma after a fixed gain; the shader undoes both.
-//   public/sky/stars.bin      every star to magnitude 7: six bytes each (see src/engine/stars.ts).
+//                             An even floor is subtracted first, so empty sky is black.
+//   public/sky/stars.bin      every star to magnitude 8: six bytes each (see src/engine/stars.ts).
 //                             A derived database, so also CC BY-SA 4.0.
 
 import { execFileSync, spawnSync } from "node:child_process";
@@ -29,8 +33,9 @@ const arg = (name) => {
 };
 const exr = arg("exr");
 const hyg = arg("hyg");
-const MAG_LIMIT = 7.0;
-export const SKY_GAIN = 6; // linear value 1/6 maps to white
+const MAG_LIMIT = 8.0;
+const SKY_GAIN = 3; // linear value 1/3 maps to white
+const SKY_FLOOR = 0.009; // the even haze of unresolved stars, taken off so empty sky is black
 const W = 4096;
 const H = 2048;
 
@@ -100,7 +105,7 @@ if (exr) {
   }
 
   const rgb = Buffer.alloc(W * H * 3);
-  const enc = (v) => Math.round(255 * Math.min(1, Math.max(0, v * SKY_GAIN)) ** (1 / 2.2));
+  const enc = (v) => Math.round(255 * Math.min(1, Math.max(0, (v - SKY_FLOOR) * SKY_GAIN)) ** (1 / 2.2));
   for (let i = 0; i < W * H; i++) {
     rgb[i * 3] = enc(R[i]);
     rgb[i * 3 + 1] = enc(G[i]);
@@ -108,7 +113,7 @@ if (exr) {
   }
   const rawRgb = join(dir, "sky.rgb");
   writeFileSync(rawRgb, rgb);
-  const r = spawnSync("ffmpeg", ["-v", "error", "-y", "-f", "rawvideo", "-pix_fmt", "rgb24", "-s", `${W}x${H}`, "-i", rawRgb, "-q:v", arg("q") ?? "4", "-pix_fmt", "yuvj444p", "public/sky/milkyway.jpg"], { stdio: "inherit" });
+  const r = spawnSync("ffmpeg", ["-v", "error", "-y", "-f", "rawvideo", "-pix_fmt", "rgb24", "-s", `${W}x${H}`, "-i", rawRgb, "-q:v", arg("q") ?? "8", "-pix_fmt", "yuvj444p", "public/sky/milkyway.jpg"], { stdio: "inherit" });
   rmSync(dir, { recursive: true, force: true });
   if (r.status !== 0) process.exit(1);
   console.log("milkyway.jpg written");

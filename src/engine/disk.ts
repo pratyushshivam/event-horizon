@@ -90,3 +90,10 @@ export function diskTemperature(r: number): number {
 export function diskShift(r: number, lz: number, rObs: number): number {
   return Math.sqrt(1 - 1.5 / r) / (1 - circularOmega(r) * lz) / Math.sqrt(1 - 1 / rObs);
 }
+
+/**
+ * Temperature given to the hottest ring, kelvin. A display choice: real disks
+ * peak in ultraviolet or X-rays, which eyes cannot see. This puts the same
+ * physics in visible light.
+ */
+export const DISPLAY_PEAK_K = 4300;

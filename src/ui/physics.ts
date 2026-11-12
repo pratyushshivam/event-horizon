@@ -2,7 +2,7 @@
 // used and every number sourced. Built once, when first opened.
 
 import { C, G, G0, GM_SUN } from "../engine/constants";
-import { DISK_PEAK } from "../engine/disk";
+import { DISK_PEAK, DISPLAY_PEAK_K } from "../engine/disk";
 import { HOLES, type Hole, holeScale } from "../engine/holes";
 import { RULES, breakupRadius, tideGPerM } from "../engine/run";
 import { B_CRIT, circularDilation } from "../engine/schwarzschild";
@@ -152,7 +152,7 @@ export function buildPhysics(root: HTMLElement, current: Hole): void {
     <ul>
       <li><b>The holes do not spin.</b> Real ones do, which flattens one side of the shadow and moves the inner edge of the disk.</li>
       <li><b>The disk is a thin, opaque sheet</b> with painted turbulence carried round at the true orbital rate. Sagittarius A* and M87* really have thick, faint, hot flows that shine in radio, not a thin bright disk.</li>
-      <li><b>The colours are shifted into what eyes see.</b> The hottest ring is set to 6,400 K. Real disks peak in ultraviolet or X-rays.</li>
+      <li><b>The colours are shifted into what eyes see.</b> The hottest ring is set to ${nf(DISPLAY_PEAK_K)} K. Real disks peak in ultraviolet or X-rays.</li>
       <li><b>The camera hovers.</b> It does not share the ship’s speed, so the view is not squeezed forwards by the ship’s motion.</li>
       <li><b>The sky is Earth’s sky</b>, placed around each hole.</li>
       <li><b>The ship is drawn far too large</b>, and its engine is far too strong.</li>

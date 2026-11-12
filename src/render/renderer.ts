@@ -43,6 +43,8 @@ export interface Scene {
   path: Float32Array;
   pathCount: number;
   pathAlpha: number;
+  /** 0..1: the path ahead ends in the hole. */
+  pathWarn: number;
   ringAlpha: number;
   homeAlpha: number;
   homeR: number;
@@ -56,6 +58,7 @@ export interface Scene {
   grain: number;
   diskGain: number;
   skyGain: number;
+  starGain: number;
 }
 
 export interface Quality {
@@ -278,13 +281,14 @@ export class Renderer {
     gl.uniform2fv(u["uPath[0]"]!, s.path);
     gl.uniform1i(u.uPathCount!, Math.min(PATH_POINTS, s.pathCount));
     gl.uniform1f(u.uPathAlpha!, s.pathAlpha);
+    gl.uniform1f(u.uPathWarn!, s.pathWarn);
     gl.uniform1f(u.uRingAlpha!, s.ringAlpha);
     gl.uniform1f(u.uHomeAlpha!, s.homeAlpha);
     gl.uniform1f(u.uHomeR!, s.homeR);
     gl.uniform1f(u.uOverlayGain!, 0.5 / s.exposure);
     gl.uniformMatrix3fv(u.uSky!, false, s.sky);
-    gl.uniform1f(u.uSkyGain!, s.skyGain / 6);
-    gl.uniform1f(u.uStarGain!, (5.5 * s.skyGain) / (starScale * starScale));
+    gl.uniform1f(u.uSkyGain!, s.skyGain / 3);
+    gl.uniform1f(u.uStarGain!, (5.5 * s.starGain) / (starScale * starScale));
     gl.uniform1f(u.uStarSize!, 0.62 * Math.max(1, starScale));
     gl.uniform1f(u.uStep!, q.step);
     gl.uniform1i(u.uSteps!, q.steps);

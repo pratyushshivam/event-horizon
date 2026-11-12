@@ -1,6 +1,7 @@
 // The end of a run: the card on the page, the share text, and the image card.
 
-import type { Hole } from "../engine/holes";
+import type { Hole, HoleScale } from "../engine/holes";
+import { RULES, tideGPerM } from "../engine/run";
 import type { Result } from "../engine/run";
 import { calendarDate, duration, ending, nf, shareText } from "../engine/words";
 
@@ -13,6 +14,7 @@ export interface CardInput {
   best: { stolenS: number; ratio: number } | undefined;
   isBest: boolean;
   breakup: number;
+  scale: HoleScale;
   canvas: HTMLCanvasElement;
   /** Draw a fresh frame so the canvas can be copied in the same task. */
   redraw: () => void;
@@ -49,7 +51,14 @@ export function showCard(input: CardInput): void {
 
   const stats: Array<[string, string]> = [];
   if (result.phase === "home") stats.push(["Time stolen", duration(result.stolenS)]);
-  stats.push(["Lowest pass", `${nf(result.minR, 2)} radii`], ["Top speed", `${nf(result.maxSpeed, 3)} c`], ["Clocks peaked", `×${nf(result.maxDilation, 2)}`]);
+  if (result.phase === "horizon") {
+    // Inside, every path ends at the centre within pi/2 rs/c of ship time.
+    stats.push(["Your fall to the centre", duration(result.fallS)], ["The longest any fall can last", duration((Math.PI / 2) * input.scale.rsOverC)]);
+  } else if (result.phase === "torn") {
+    stats.push(["Broke up at", `${nf(result.minR, 2)} radii`], ["Stretch there", `${nf(RULES.hullGPerM)} g per metre`], ["At the horizon it would be", `${nf(tideGPerM(1, input.scale) / 1e6, 1)} million g per metre`]);
+  } else {
+    stats.push(["Lowest pass", `${nf(result.minR, 2)} radii`], ["Top speed", `${nf(result.maxSpeed, 3)} c`], ["Clocks peaked", `×${nf(result.maxDilation, 2)}`]);
+  }
   $("card-stats").innerHTML = stats.map(([k, v], i) => `<div class="${i === 0 && result.phase === "home" ? "stolen" : ""}"><dt>${k}</dt><dd>${v}</dd></div>`).join("");
 
   const bestEl = $("card-best");

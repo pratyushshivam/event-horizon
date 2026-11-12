@@ -119,7 +119,7 @@ describe("words", () => {
     const res = resultOf(run, m87);
     const card = ending(res, holeById("m87"), Date.UTC(2026, 10, 13));
     expect(card.title).toBe("Home");
-    expect(card.lines[0]).toContain("by your clock");
+    expect(card.lines[0]).toContain("that you did not");
     const text = shareText(res, holeById("m87"), "https://example.org/");
     expect(text.split("\n")[0]).toBe("Event Horizon · M87*");
     expect(text).toContain("I stole");
