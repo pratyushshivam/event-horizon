@@ -86,6 +86,33 @@ describe("a run", () => {
   });
 });
 
+describe("any flying at all", () => {
+  it("never produces a number that is not a number", () => {
+    // Two hundred runs of random stick-waggling, each to its end.
+    let seed = 12345;
+    const rand = () => {
+      seed = (seed * 1664525 + 1013904223) >>> 0;
+      return seed / 4294967296;
+    };
+    const outcomes = new Set<string>();
+    for (let n = 0; n < 200; n++) {
+      let r = newRun();
+      let c: Controls = { radial: 0, along: -1 };
+      for (let i = 0; i < 60 * 200 && (r.phase === "ready" || r.phase === "flying"); i++) {
+        if (i % 45 === 0) c = rand() < 0.45 ? COAST : { radial: rand() * 2 - 1, along: rand() * 2 - 1.2 };
+        r = stepRun(r, DT, c, n % 3 === 0 ? cyg : sgr);
+        expect(Number.isFinite(r.ship.r + r.ship.phi + r.ship.vr + r.ship.vphi + r.ship.tau)).toBe(true);
+      }
+      expect(["home", "horizon", "torn", "adrift"]).toContain(r.phase);
+      const res = resultOf(r, sgr);
+      expect(Number.isFinite(res.shipS)).toBe(true);
+      if (r.phase === "home") expect(res.stolenS).toBeGreaterThan(0);
+      outcomes.add(r.phase);
+    }
+    expect(outcomes.size).toBeGreaterThanOrEqual(3);
+  });
+});
+
 describe("words", () => {
   it("writes durations in the units that matter", () => {
     expect(duration(0.00021)).toBe("210 μs");
