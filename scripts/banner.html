@@ -1,0 +1,43 @@
+<!doctype html>
+<!-- The README banner (2560 x 960) and, with ?og, the social card (1200 x 630).
+     The picture behind the words is a photo-mode still saved from the running page. -->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <style>
+      @font-face { font-family: "Geist"; src: url("../src/fonts/geist.woff2") format("woff2"); font-weight: 100 900; }
+      * { box-sizing: border-box; margin: 0; }
+      body { background: #050506; }
+      #b { position: relative; width: 2560px; height: 960px; overflow: hidden; background: #050506 url("../assets/photos/wide.jpg") center / cover; color: #f2eee5; font-family: "Geist", sans-serif; }
+      #b::before { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, rgba(5,5,6,.55), rgba(5,5,6,0) 46%); }
+      .t { position: absolute; left: 150px; top: 250px; }
+      .k { font-size: 30px; font-weight: 500; letter-spacing: .16em; text-transform: uppercase; color: rgba(242,238,229,.6); }
+      h1 { margin-top: 26px; font-size: 176px; font-weight: 600; letter-spacing: -.035em; line-height: .98; white-space: nowrap; }
+      h1 i { display: inline-block; width: 30px; height: 30px; margin-left: 22px; border-radius: 50%; background: #d4491a; }
+      p { margin-top: 44px; padding-top: 40px; border-top: 2px solid rgba(242,238,229,.22); font-size: 46px; line-height: 1.34; color: rgba(242,238,229,.86); max-width: 1010px; }
+      p b { font-weight: 500; color: #ee6a36; }
+      body.og #b { width: 1200px; height: 630px; background-image: url("../assets/photos/card.jpg"); }
+      body.og .t { left: 64px; top: 150px; }
+      body.og .k { font-size: 17px; }
+      body.og h1 { font-size: 84px; margin-top: 16px; }
+      body.og h1 i { width: 17px; height: 17px; margin-left: 12px; }
+      body.og p { margin-top: 26px; padding-top: 24px; border-top-width: 1px; font-size: 27px; max-width: 520px; }
+    </style>
+  </head>
+  <body>
+    <div id="b">
+      <div class="t">
+        <div class="k">A real black hole, traced live</div>
+        <h1>Event Horizon<i></i></h1>
+        <p>Fly around it. Two clocks run, yours and Earth’s. <b>The lower you dare, the more time passes at home.</b></p>
+      </div>
+    </div>
+    <script>
+      if (location.search.includes("og")) {
+        document.body.classList.add("og");
+        const src = new URLSearchParams(location.search).get("src");
+        if (src) document.getElementById("b").style.backgroundImage = `url("${src}")`;
+      }
+    </script>
+  </body>
+</html>

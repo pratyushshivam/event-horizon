@@ -59,8 +59,9 @@ export function clockFace(ms: number, style: ClockStyle): { date: string; time: 
   const date = `${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
   const hms = `${p2(d.getHours())}:${p2(d.getMinutes())}:${p2(d.getSeconds())}`;
   if (style === "fast") {
-    const frac = ms - Math.floor(ms / 1000) * 1000;
-    return { date, time: `${hms}.${frac.toFixed(2).padStart(6, "0")}` };
+    // Millionths of a second: around a stellar-mass hole a whole run is over in a blink.
+    const micro = Math.min(999_999, Math.floor((ms - Math.floor(ms / 1000) * 1000) * 1000));
+    return { date, time: `${hms}.${String(micro).padStart(6, "0")}` };
   }
   return { date, time: style === "calendar" ? `${p2(d.getHours())}:${p2(d.getMinutes())}` : hms };
 }

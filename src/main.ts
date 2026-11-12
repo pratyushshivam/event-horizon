@@ -71,7 +71,7 @@ const sound = new Sound();
 sound.muted = store.mute;
 
 const free = { az: 0.5, el: 0.32, dist: 22 };
-const photo = { tanY: Math.tan((26 * Math.PI) / 180), tPeak: LOOK.tPeak, exposure: 1 };
+const photo = { tanY: Math.tan((26 * Math.PI) / 180), tPeak: LOOK.tPeak, exposure: 1, panX: 0, panY: 0 };
 let camPos: Vec3 = [0, 0, 0];
 let camLook: Vec3 = [0, 0, 0];
 let camReady = false;
@@ -269,6 +269,8 @@ function buildScene(dt: number): Scene {
     cam: camPos,
     ...b,
     tanY,
+    shiftX: mode === "photo" ? photo.panX : 0,
+    shiftY: mode === "photo" ? photo.panY : 0,
     time: worldTime,
     diskN: DISK_N,
     diskX: DISK_X,
@@ -552,7 +554,7 @@ function readControls(): void {
   }
 }
 
-const drag = { active: false, thrust: false, x0: 0, y0: 0, lastX: 0, lastY: 0 };
+const drag = { active: false, thrust: false, pan: false, x0: 0, y0: 0, lastX: 0, lastY: 0 };
 const pointers = new Map<number, { x: number; y: number }>();
 let pinch = 0;
 
@@ -566,6 +568,7 @@ canvas.addEventListener("pointerdown", (e) => {
     return;
   }
   drag.active = true;
+  drag.pan = e.button === 2 || e.shiftKey;
   drag.x0 = drag.lastX = e.clientX;
   drag.y0 = drag.lastY = e.clientY;
   canvas.classList.add("dragging");
@@ -583,7 +586,10 @@ canvas.addEventListener("pointermove", (e) => {
   }
   if (!drag.active) return;
   const steer = mode === "photo" || view === "free" || ended;
-  if (steer) {
+  if (steer && drag.pan && mode === "photo") {
+    photo.panX = clamp(photo.panX - ((e.clientX - drag.lastX) / canvas.clientWidth) * 2, -0.9, 0.9);
+    photo.panY = clamp(photo.panY + ((e.clientY - drag.lastY) / canvas.clientHeight) * 2, -0.9, 0.9);
+  } else if (steer) {
     free.az -= (e.clientX - drag.lastX) * 0.006;
     free.el = clamp(free.el + (e.clientY - drag.lastY) * 0.005, -1.45, 1.45);
   } else {
@@ -613,6 +619,7 @@ const release = (e: PointerEvent) => {
   controls.radial = 0;
   canvas.classList.remove("dragging");
 };
+canvas.addEventListener("contextmenu", (e) => e.preventDefault());
 canvas.addEventListener("pointerup", release);
 canvas.addEventListener("pointercancel", release);
 
@@ -687,6 +694,7 @@ function setPhoto(on: boolean): void {
   if (on) {
     if (view === "chase" || ended) enterFree();
     photo.tanY = baseTanY();
+    photo.panX = photo.panY = 0;
     ($("p-fov") as HTMLInputElement).value = String(Math.round((2 * Math.atan(photo.tanY) * 180) / Math.PI));
     mode = "photo";
     uiHidden = false;

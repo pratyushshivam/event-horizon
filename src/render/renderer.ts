@@ -28,6 +28,9 @@ export interface Scene {
   fwd: Vec3;
   /** Tangent of half the vertical field of view. */
   tanY: number;
+  /** Lens shift, in half-screens: slides the picture without turning the camera. */
+  shiftX: number;
+  shiftY: number;
   /** Far-away time, rs/c: drives the disk's rotation. */
   time: number;
   diskN: Vec3;
@@ -269,6 +272,7 @@ export class Renderer {
     gl.uniform3fv(u.uUp!, s.up);
     gl.uniform3fv(u.uFwd!, s.fwd);
     gl.uniform2f(u.uTan!, (s.tanY * into.w) / into.h, s.tanY);
+    gl.uniform2f(u.uShift!, s.shiftX, s.shiftY);
     gl.uniform1f(u.uTime!, s.time);
     gl.uniform3fv(u.uDiskN!, s.diskN);
     gl.uniform3fv(u.uDiskX!, s.diskX);

@@ -128,7 +128,7 @@ describe("words", () => {
     expect(clockStyle(cyg.rsOverC)).toBe("fast");
     const ms = new Date(2026, 10, 13, 14, 3, 22, 417).getTime();
     expect(clockFace(ms, "day")).toEqual({ date: "13 Nov 2026", time: "14:03:22" });
-    expect(clockFace(ms + 0.25, "fast").time).toBe("14:03:22.417.25");
+    expect(clockFace(ms + 0.25, "fast").time).toBe("14:03:22.417250");
     expect(clockFace(ms, "calendar").time).toBe("14:03");
   });
 

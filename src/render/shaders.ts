@@ -28,6 +28,7 @@ uniform vec2 uRes;
 uniform vec2 uJitter;
 uniform vec3 uCam, uRight, uUp, uFwd;
 uniform vec2 uTan;
+uniform vec2 uShift;
 uniform float uTime;
 uniform vec3 uDiskN, uDiskX, uDiskY;
 uniform float uDiskOut, uTpeak, uDiskGain;
@@ -167,7 +168,7 @@ vec3 starIn(vec3 q, vec3 d, vec3 jx, vec3 jy, float invDet, float a, float b, fl
 
 void main(){
   vec2 frag = gl_FragCoord.xy + uJitter;
-  vec2 ndc = frag/uRes*2.-1.;
+  vec2 ndc = frag/uRes*2.-1. + uShift;
   vec3 rd = normalize(uFwd + ndc.x*uTan.x*uRight + ndc.y*uTan.y*uUp);
   float pixAngle = 2.*uTan.y/uRes.y;
 
