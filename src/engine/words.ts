@@ -52,22 +52,22 @@ export function clockStyle(rsOverC: number): ClockStyle {
   return "fast";
 }
 
-/** One clock face: a date line and a time line. `ms` is a UTC timestamp, fractional. */
+/** One clock face, in the visitor's own time zone: a date line and a time line. `ms` is a timestamp, fractional. */
 export function clockFace(ms: number, style: ClockStyle): { date: string; time: string } {
   const d = new Date(Math.floor(ms));
   const p2 = (n: number) => String(n).padStart(2, "0");
-  const date = `${d.getUTCDate()} ${MONTHS[d.getUTCMonth()]} ${d.getUTCFullYear()}`;
-  const hms = `${p2(d.getUTCHours())}:${p2(d.getUTCMinutes())}:${p2(d.getUTCSeconds())}`;
+  const date = `${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
+  const hms = `${p2(d.getHours())}:${p2(d.getMinutes())}:${p2(d.getSeconds())}`;
   if (style === "fast") {
     const frac = ms - Math.floor(ms / 1000) * 1000;
     return { date, time: `${hms}.${frac.toFixed(2).padStart(6, "0")}` };
   }
-  return { date, time: style === "calendar" ? `${p2(d.getUTCHours())}:${p2(d.getUTCMinutes())}` : hms };
+  return { date, time: style === "calendar" ? `${p2(d.getHours())}:${p2(d.getMinutes())}` : hms };
 }
 
 export function calendarDate(ms: number): string {
   const d = new Date(ms);
-  return `${d.getUTCDate()} ${MONTHS[d.getUTCMonth()]} ${d.getUTCFullYear()}`;
+  return `${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
 }
 
 /** Speed of Earth along its orbit, m/s, from the au and the year. */

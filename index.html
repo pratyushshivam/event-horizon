@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+    <title>Event Horizon: fly around a real black hole</title>
+    <meta name="description" content="Fly a ship around a real black hole, traced live through curved spacetime. Two clocks run, yours and Earth's. The lower you dare to fly, the more time passes at home." />
+    <meta name="theme-color" content="#050506" />
+    <meta property="og:title" content="Event Horizon" />
+    <meta property="og:description" content="Fly around a real black hole. The lower you dare, the more time passes at home." />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="https://pratyushshivam.github.io/event-horizon/og.jpg" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="icon" href="./icon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="./src/styles.css" />
+  </head>
+  <body>
+    <canvas id="view" aria-label="A black hole and its glowing disk, seen from a ship in orbit."></canvas>
+
+    <div id="ui" class="ui" hidden>
+      <header class="top">
+        <div class="brand">
+          <h1 class="wordmark">Event Horizon</h1>
+          <nav class="holes" id="holes" aria-label="Choose a black hole"></nav>
+        </div>
+
+        <div class="clocks" id="clocks" aria-live="off">
+          <div class="clock">
+            <span class="label">Your ship</span>
+            <span class="time" id="ship-time">00:00:00</span>
+            <span class="date" id="ship-date"></span>
+          </div>
+          <div class="clock">
+            <span class="label">Earth</span>
+            <span class="time" id="earth-time">00:00:00</span>
+            <span class="date" id="earth-date"></span>
+          </div>
+          <p class="gap" id="gap"></p>
+        </div>
+
+        <nav class="tools" aria-label="Tools">
+          <button class="tool" id="t-rings" type="button" aria-pressed="false">Rings</button>
+          <button class="tool" id="t-view" type="button">Orbit view</button>
+          <button class="tool" id="t-photo" type="button">Photo</button>
+          <button class="tool" id="t-physics" type="button">The physics</button>
+          <button class="tool tool-icon" id="t-mute" type="button" aria-pressed="false" aria-label="Mute sound">
+            <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+              <path d="M4 9.5v5h3.5L12 18.5v-13L7.5 9.5H4z" fill="currentColor" />
+              <path class="waves" d="M15.5 8.5a5 5 0 0 1 0 7M18 6a8.5 8.5 0 0 1 0 12" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" />
+              <path class="cross" d="M16 9.5l5 5m0-5l-5 5" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" />
+            </svg>
+          </button>
+        </nav>
+      </header>
+
+      <p class="hint" id="hint" aria-live="polite"></p>
+      <div class="ghost" id="ghost" aria-hidden="true"><i></i></div>
+      <div class="labels" id="labels" aria-hidden="true"></div>
+
+      <footer class="bottom" id="bottom">
+        <dl class="dials">
+          <div class="dial">
+            <dt>Distance</dt>
+            <dd><b id="d-r">12.00</b> radii</dd>
+            <dd class="sub" id="d-km"></dd>
+          </div>
+          <div class="dial">
+            <dt>Speed</dt>
+            <dd><b id="d-v">0.000</b> c</dd>
+            <dd class="sub" id="d-kms"></dd>
+          </div>
+          <div class="dial">
+            <dt>Earth’s clock runs</dt>
+            <dd><b id="d-g">×1.00</b></dd>
+            <dd class="sub">against yours</dd>
+          </div>
+          <div class="dial dial-tide">
+            <dt>Tidal stretch</dt>
+            <dd><b id="d-tide">0</b> <span id="d-tide-u">g per metre</span></dd>
+            <dd class="sub"><span class="gauge" id="g-tide"><i></i><u></u></span></dd>
+          </div>
+        </dl>
+        <div class="tanks">
+          <div class="tank"><span>Fuel</span><span class="bar" id="b-fuel"><i></i></span></div>
+          <div class="tank"><span>Air</span><span class="bar" id="b-air"><i></i></span></div>
+        </div>
+      </footer>
+    </div>
+
+    <div class="photo-bar" id="photo-bar" hidden>
+      <p class="photo-note">Drag to look around. Scroll or pinch to move in and out.</p>
+      <label>Lens <input id="p-fov" type="range" min="14" max="100" value="52" /></label>
+      <label>Disk heat <input id="p-temp" type="range" min="0" max="100" value="38" /></label>
+      <label>Exposure <input id="p-exp" type="range" min="0" max="100" value="50" /></label>
+      <button class="btn" id="p-save" type="button">Save photo</button>
+      <button class="btn btn-quiet" id="p-done" type="button">Done</button>
+    </div>
+
+    <section class="card-wrap" id="card" hidden aria-live="polite">
+      <div class="card" role="dialog" aria-label="Run over">
+        <p class="card-kicker" id="card-kicker"></p>
+        <h2 class="card-title" id="card-title"></h2>
+        <div class="card-clocks" id="card-clocks"></div>
+        <div class="card-lines" id="card-lines"></div>
+        <dl class="card-stats" id="card-stats"></dl>
+        <p class="card-best" id="card-best"></p>
+        <div class="card-actions">
+          <button class="btn" id="again" type="button">Fly again</button>
+          <button class="btn btn-quiet" id="share" type="button">Share</button>
+          <button class="btn btn-quiet" id="save-card" type="button">Save card</button>
+        </div>
+      </div>
+    </section>
+
+    <aside class="sheet" id="physics" hidden aria-label="The physics">
+      <button class="sheet-close" id="physics-close" type="button" aria-label="Close">Close</button>
+      <div class="sheet-body" id="physics-body"></div>
+    </aside>
+
+    <div class="fatal" id="fatal" hidden>
+      <h1 class="wordmark">Event Horizon</h1>
+      <p id="fatal-text"></p>
+    </div>
+
+    <p class="credit" id="credit">By <a href="https://pratyushshivam.com" rel="noopener">Pratyush Shivam</a></p>
+    <p class="fps" id="fps" hidden></p>
+
+    <script type="module" src="./src/main.ts"></script>
+  </body>
+</html>
