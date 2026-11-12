@@ -95,10 +95,10 @@ vec4 shadeDisk(vec3 p, float rc, float lz, float gCam, float pixWorld){
   float band = textureLod(uNoiseTex, vec2(.37, lr*1.9), lod+1.).g;
   float lanes = smoothstep(.22,.8, n*.62 + band*.38);
   float edgeIn = smoothstep(3.,3.25,rc);
-  float edgeOut = 1.-smoothstep(uDiskOut*.62, uDiskOut, rc + (n-.5)*3.2);
+  float edgeOut = 1.-smoothstep(uDiskOut*.8, uDiskOut, rc + (n-.5)*2.2);
   float T = uTpeak*pow(max(F,1e-6),.25)*g;
   float g2 = g*g;
-  vec3 col = blackbody(T)*F*g2*g2*mix(.16,1.7,lanes)*uDiskGain;
+  vec3 col = blackbody(T)*F*g2*g2*mix(.3,1.65,lanes)*uDiskGain;
   float alpha = edgeIn*edgeOut*clamp(.74+lanes*.5,0.,1.);
   return vec4(col*alpha, alpha);
 }
@@ -385,7 +385,11 @@ void main(){
   vec3 c = (scene + bloom*uBloomAmount)*uExposure;
   vec2 q = vUv-.5;
   c *= 1. - uVignette*dot(q,q)*1.6;
-  c = filmic(c);
+  // Half per-channel (bright light runs to white), half on brightness alone
+  // (colour kept), so the disk keeps its orange without going flat.
+  float l = dot(c, vec3(.2126,.7152,.0722));
+  vec3 kept = c*(filmic(vec3(l)).r/max(l,1e-5));
+  c = mix(min(kept,vec3(1.)), filmic(c), .5);
   c = mix(c*12.92, 1.055*pow(c,vec3(1./2.4))-.055, step(.0031308,c));
   vec2 px = vUv*uOut;
   float n = hash(px + uSeed*61.7) + hash(px*1.37 + uSeed*17.3 + 11.) - 1.;   // triangular

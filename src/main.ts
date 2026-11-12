@@ -31,14 +31,14 @@ const DISK_X: Vec3 = norm(cross(DISK_N, [0, 0, 1]));
 const DISK_Y: Vec3 = cross(DISK_N, DISK_X);
 const DISK_OUT = 10.5;
 const tune = (name: string, fallback: number) => (DEBUG && params.has(name) ? Number(params.get(name)) : fallback);
-const LOOK = { tPeak: tune("tp", DISPLAY_PEAK_K), diskGain: tune("dg", 0.5), exposure: tune("ex", 0.85), skyGain: tune("sg", 0.42), starGain: tune("st", 2.4) };
+const LOOK = { tPeak: tune("tp", DISPLAY_PEAK_K), diskGain: tune("dg", 0.5), exposure: tune("ex", 0.85), skyGain: tune("sg", 0.36), starGain: tune("st", 2.4) };
 
 // The sky is the one seen from Earth, turned so the Milky Way crosses behind
 // the hole in the opening view. Galactic centre and north galactic pole, J2000.
 const SKY = (() => {
   const gc: Vec3 = [-0.0549, -0.4848, 0.8729];
   const ngp: Vec3 = [-0.8677, 0.456, 0.1982];
-  const behind = norm(rotate(gc, ngp, (-22 * Math.PI) / 180));
+  const behind = norm(rotate(gc, ngp, (-58 * Math.PI) / 180));
   const x = mul(behind, -1);
   const upRaw = rotate(ngp, behind, (34 * Math.PI) / 180);
   const y = norm(sub(upRaw, mul(x, dot(upRaw, x))));
@@ -866,7 +866,7 @@ function loop(now: number): void {
 buildHoles();
 ui.hidden = false;
 if (DEBUG) {
-  el.fps.hidden = false;
+  el.fps.hidden = params.get("debug") === "quiet";
   (window as unknown as Record<string, unknown>).__eh = {
     get run() {
       return run;

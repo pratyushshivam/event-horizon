@@ -96,4 +96,4 @@ export function diskShift(r: number, lz: number, rObs: number): number {
  * peak in ultraviolet or X-rays, which eyes cannot see. This puts the same
  * physics in visible light.
  */
-export const DISPLAY_PEAK_K = 4300;
+export const DISPLAY_PEAK_K = 3900;
