@@ -1,0 +1,22 @@
+{
+  "name": "event-horizon",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Fly a ship around a real black hole, traced live through curved spacetime. Two clocks run: yours and Earth's.",
+  "homepage": "https://pratyushshivam.github.io/event-horizon/",
+  "license": "MIT",
+  "scripts": {
+    "dev": "vite --port 5250",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview --port 5251",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.6",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.8",
+    "vitest": "^5.1.0"
+  }
+}
