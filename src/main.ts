@@ -57,6 +57,9 @@ let worldTime = 40;
 let departMs = Date.now();
 let readyOffsetMs = 0;
 let mode: "fly" | "photo" = "fly";
+// The page opens on the view alone: look around first, play when you want to.
+let exploring = !params.has("play");
+let idle = 99;
 let view: "chase" | "free" = "chase";
 let rings = false;
 let ended = false;
@@ -70,11 +73,13 @@ const keys = new Set<string>();
 const sound = new Sound();
 sound.muted = store.mute;
 
-const free = { az: 0.5, el: 0.32, dist: 22 };
+const free = { az: 0.22, el: 0.13, dist: 19 };
 const photo = { tanY: Math.tan((26 * Math.PI) / 180), tPeak: LOOK.tPeak, exposure: 1, panX: 0, panY: 0 };
 let camPos: Vec3 = [0, 0, 0];
 let camLook: Vec3 = [0, 0, 0];
 let camReady = false;
+/** How far the camera wants to be from the centre. Below 1 it is inside the horizon: black and silent. */
+let camR = 20;
 let fadeIn = 0;
 let skyReady = false;
 
@@ -161,17 +166,21 @@ function enterFree(): void {
 }
 
 function updateCamera(dt: number): void {
-  const target = view === "chase" && mode === "fly" && !(ended && run.phase === "horizon") ? chaseTarget() : freeTarget();
+  const target = view === "chase" && mode === "fly" && !exploring && !(ended && run.phase === "horizon") ? chaseTarget() : freeTarget();
   if (!camReady) {
     camPos = target.pos;
     camLook = target.look;
+    camR = length(target.pos);
     camReady = true;
   }
   const k = 1 - Math.exp(-dt * (view === "chase" ? 2.6 : 5));
   camPos = mix(camPos, target.pos, k);
   camLook = mix(camLook, target.look, k);
+  // The picture is traced for a camera hovering outside the horizon. Closer
+  // than that there is nothing to trace: no light comes out.
+  camR += (length(target.pos) - camR) * k;
   const d = length(camPos);
-  if (d < 1.12) camPos = mul(camPos, 1.12 / d);
+  if (d < 1.04) camPos = mul(camPos, 1.04 / Math.max(d, 1e-6));
 }
 
 // ---------------------------------------------------------------- scene
@@ -211,7 +220,7 @@ function buildScene(dt: number): Scene {
   const tanY = mode === "photo" ? photo.tanY : baseTanY();
   const rCam = length(camPos);
   const gCam = 1 / Math.sqrt(1 - 1 / rCam);
-  const flying = mode === "fly" && !ended;
+  const flying = mode === "fly" && !ended && !exploring;
 
   // Predicted path, refreshed a few times a second.
   pathAge += dt;
@@ -291,7 +300,7 @@ function buildScene(dt: number): Scene {
     exposure: (LOOK.exposure * (mode === "photo" ? photo.exposure : 1)) / gCam ** 3,
     ship,
     station,
-    fade: smooth(fadeIn),
+    fade: smooth(fadeIn) * smooth((camR - 1.0) / 0.16),
     grain: 0.02,
     diskGain: LOOK.diskGain,
     skyGain: LOOK.skyGain,
@@ -308,6 +317,7 @@ function stationPhi(): number {
 const ui = $("ui");
 const hint = $("hint");
 const ghost = $("ghost");
+const exploreHint = document.querySelector<HTMLElement>(".explore-hint")!;
 const el = {
   shipTime: $("ship-time"),
   shipDate: $("ship-date"),
@@ -383,7 +393,10 @@ const firstLine = coarse
   : "Hold <kbd>←</kbd> to fall towards it. Hold <kbd>→</kbd> to climb.";
 
 function updateHints(): void {
-  if (mode !== "fly" || ended) return setHint("");
+  if (mode !== "fly" || ended || exploring) {
+    ghost.classList.remove("on");
+    return setHint("");
+  }
   if (run.phase === "ready") {
     setHint(firstLine);
     ghost.classList.toggle("on", !store.seen && fadeIn > 0.8);
@@ -499,6 +512,26 @@ function restart(): void {
   $("credit").classList.remove("away");
 }
 
+/** Leave the view and start the game: the camera glides down to the ship. */
+function play(): void {
+  sound.wake();
+  exploring = false;
+  restart();
+  camReady = true;
+  ui.classList.remove("exploring");
+}
+
+/** Back to looking around. Any run in progress is dropped. */
+function explore(): void {
+  enterFree();
+  free.dist = clamp(Math.max(free.dist, 17), 2.2, 60);
+  free.el = Math.max(free.el, 0.1);
+  exploring = true;
+  restart();
+  camReady = true;
+  ui.classList.add("exploring");
+}
+
 function finish(): void {
   ended = true;
   endClock = 0;
@@ -580,12 +613,13 @@ canvas.addEventListener("pointermove", (e) => {
   if (pointers.size === 2) {
     const [a, b] = [...pointers.values()];
     const d = Math.hypot(a!.x - b!.x, a!.y - b!.y);
-    if (pinch > 0 && (mode === "photo" || view === "free")) free.dist = clamp((free.dist * pinch) / d, 1.6, 70);
+    if (pinch > 0 && (mode === "photo" || view === "free" || exploring)) free.dist = clamp((free.dist * pinch) / d, 0.3, 70);
     pinch = d;
     return;
   }
   if (!drag.active) return;
-  const steer = mode === "photo" || view === "free" || ended;
+  const steer = mode === "photo" || view === "free" || ended || exploring;
+  idle = 0;
   if (steer && drag.pan && mode === "photo") {
     photo.panX = clamp(photo.panX - ((e.clientX - drag.lastX) / canvas.clientWidth) * 2, -0.9, 0.9);
     photo.panY = clamp(photo.panY + ((e.clientY - drag.lastY) / canvas.clientHeight) * 2, -0.9, 0.9);
@@ -627,8 +661,9 @@ canvas.addEventListener(
   "wheel",
   (e) => {
     e.preventDefault();
-    if (mode !== "photo" && view !== "free") return;
-    free.dist = clamp(free.dist * Math.exp(e.deltaY * 0.0012), 1.6, 70);
+    if (mode !== "photo" && view !== "free" && !exploring) return;
+    idle = 0;
+    free.dist = clamp(free.dist * Math.exp(e.deltaY * 0.0012), 0.3, 70);
   },
   { passive: false },
 );
@@ -654,6 +689,7 @@ window.addEventListener("keydown", (e) => {
     uiHidden = !uiHidden;
     $("photo-bar").classList.toggle("away", uiHidden);
   } else if ((k === " " || k === "Enter") && cardShown) restart();
+  else if ((k === " " || k === "Enter") && exploring && mode === "fly") play();
 });
 window.addEventListener("keyup", (e) => keys.delete(e.key.length === 1 ? e.key.toLowerCase() : e.key));
 window.addEventListener("blur", () => keys.clear());
@@ -671,7 +707,7 @@ function toggleRings(): void {
   $("t-rings").setAttribute("aria-pressed", String(rings));
 }
 function toggleView(): void {
-  if (mode !== "fly" || ended) return;
+  if (mode !== "fly" || ended || exploring) return;
   if (view === "chase") {
     enterFree();
     free.dist = Math.max(free.dist * 1.25, 14);
@@ -714,6 +750,9 @@ $("t-mute").setAttribute("aria-pressed", String(store.mute));
 $("t-rings").addEventListener("click", toggleRings);
 $("t-view").addEventListener("click", toggleView);
 $("t-photo").addEventListener("click", () => setPhoto(true));
+$("play").addEventListener("click", play);
+$("t-explore").addEventListener("click", explore);
+$("card-explore").addEventListener("click", explore);
 $("t-physics").addEventListener("click", () => togglePhysics(true));
 $("physics-close").addEventListener("click", () => togglePhysics(false));
 $("p-done").addEventListener("click", () => setPhoto(false));
@@ -822,10 +861,15 @@ function frame(dtReal: number): void {
   readControls();
   if (skyReady) fadeIn = Math.min(1, fadeIn + dt / 1.6);
 
+  // Left alone, the explore view turns slowly on its own.
+  idle += dt;
+  if (exploring && mode === "fly" && idle > 3 && !reducedMotion) free.az += dt * 0.022 * smooth((idle - 3) / 2);
+
   if (mode === "fly") {
     const before = run.phase;
     if (!ended) {
       const dtau = dt * RULES.rate;
+      if (exploring) controls.along = controls.radial = 0;
       const rate = run.ship.r > 1.001 ? dilation(run.ship) : 1;
       run = stepRun(run, dtau, controls, scale);
       worldTime += dtau * Math.min(rate, 8);
@@ -854,10 +898,14 @@ function frame(dtReal: number): void {
   updateHud(dt);
   updateLabels(scene);
 
-  const depth = clamp((RULES.homeR - run.ship.r) / (RULES.homeR - 1));
-  const burning = !ended && run.fuel > 0 && Math.hypot(controls.along, controls.radial) > 0.05 ? 1 : 0;
-  const silent = ended && run.phase === "horizon";
-  sound.update(dt, depth, burning, run.ship.r > 1.001 ? dilation(run.ship) : 1, !silent && mode === "fly" && !document.hidden, run.phase === "flying" && !ended);
+  // Sound follows whichever is deeper: the ship, or the camera you are moving.
+  const inGame = mode === "fly" && !exploring;
+  const shipDepth = inGame ? clamp((RULES.homeR - run.ship.r) / (RULES.homeR - 1)) : 0;
+  const camDepth = clamp((15 - camR) / 14);
+  const burning = inGame && !ended && run.fuel > 0 && Math.hypot(controls.along, controls.radial) > 0.05 ? 1 : 0;
+  const silent = (ended && run.phase === "horizon") || camR < 1;
+  sound.update(dt, Math.max(shipDepth, camDepth), burning, run.ship.r > 1.001 ? dilation(run.ship) : 1, !silent && !document.hidden, inGame && run.phase === "flying" && !ended);
+  if (exploring) exploreHint.textContent = camR < 1 ? "Inside the horizon. No light gets out, and no sound." : "Drag to look around. Scroll or pinch to move closer.";
 }
 
 function loop(now: number): void {
@@ -872,6 +920,8 @@ function loop(now: number): void {
 }
 
 buildHoles();
+if (canvas.height > canvas.width) free.dist = 27;
+ui.classList.toggle("exploring", exploring);
 ui.hidden = false;
 if (DEBUG) {
   el.fps.hidden = params.get("debug") === "quiet";
@@ -880,7 +930,7 @@ if (DEBUG) {
       return run;
     },
     get stats() {
-      return { ema, tier, resScale, gpu: renderer.gpu, w: canvas.width, h: canvas.height, float: renderer.float, view, mode, ended, cardShown, firstBurnDone, lastPhoto };
+      return { ema, camR, tier, resScale, gpu: renderer.gpu, w: canvas.width, h: canvas.height, float: renderer.float, view, mode, ended, cardShown, firstBurnDone, lastPhoto };
     },
     get cam() {
       return camPos;
@@ -891,6 +941,11 @@ if (DEBUG) {
     setPhoto,
     savePhoto,
     restart,
+    play,
+    explore,
+    get exploring() {
+      return exploring;
+    },
     frame,
   };
 }

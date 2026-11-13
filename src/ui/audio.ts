@@ -1,6 +1,7 @@
-// Sound, made on the spot with WebAudio. A deep bed that swells as the ship
-// goes lower, the engine as filtered noise, and two ticks: one for the ship's
-// second, one for Earth's. As the clocks pull apart, so do the ticks.
+// Sound, made on the spot with WebAudio. A deep bed that swells and sinks as
+// you go lower; over it, closer in, a cold cluster of voices a semitone apart
+// and a howl of filtered noise; the engine; and two ticks, one for the ship's
+// second, one for Earth's. Inside the horizon there is nothing at all.
 
 export class Sound {
   private ctx: AudioContext | null = null;
@@ -8,6 +9,12 @@ export class Sound {
   private bed: GainNode | null = null;
   private bedFilter: BiquadFilterNode | null = null;
   private engine: GainNode | null = null;
+  private voices: GainNode | null = null;
+  private voiceOscs: OscillatorNode[] = [];
+  private howl: GainNode | null = null;
+  private howlBand: BiquadFilterNode | null = null;
+  private pulse: OscillatorNode | null = null;
+  private pulseDepth: GainNode | null = null;
   private oscs: OscillatorNode[] = [];
   private shipPhase = 0;
   private earthPhase = 0;
@@ -82,6 +89,77 @@ export class Sound {
     noise.connect(band).connect(eg).connect(master);
     noise.start();
     this.engine = eg;
+
+    // The voices: pairs of tones a semitone and a tritone apart, each wavering
+    // slowly, so they beat against each other and never settle.
+    const voices = ctx.createGain();
+    voices.gain.value = 0;
+    const voiceTone = ctx.createBiquadFilter();
+    voiceTone.type = "lowpass";
+    voiceTone.frequency.value = 1400;
+    for (const [freq, gain] of [
+      [155.6, 0.5],
+      [164.8, 0.42],
+      [220.0, 0.3],
+      [311.1, 0.2],
+      [329.6, 0.16],
+      [466.2, 0.07],
+    ] as const) {
+      const o = ctx.createOscillator();
+      o.type = "sine";
+      o.frequency.value = freq;
+      const g = ctx.createGain();
+      g.gain.value = gain;
+      const lfo = ctx.createOscillator();
+      lfo.frequency.value = 0.07 + Math.random() * 0.16;
+      const lg = ctx.createGain();
+      lg.gain.value = gain * 0.6;
+      lfo.connect(lg).connect(g.gain);
+      lfo.start();
+      const drift = ctx.createOscillator();
+      drift.frequency.value = 0.03 + Math.random() * 0.05;
+      const dg = ctx.createGain();
+      dg.gain.value = freq * 0.012;
+      drift.connect(dg).connect(o.frequency);
+      drift.start();
+      o.connect(g).connect(voiceTone);
+      o.start();
+      this.voiceOscs.push(o);
+    }
+    voiceTone.connect(voices).connect(master);
+    this.voices = voices;
+
+    // The howl: the same noise through a narrow, wandering band.
+    const wind = ctx.createBufferSource();
+    wind.buffer = buf;
+    wind.loop = true;
+    wind.playbackRate.value = 1.7;
+    const howlBand = ctx.createBiquadFilter();
+    howlBand.type = "bandpass";
+    howlBand.frequency.value = 420;
+    howlBand.Q.value = 9;
+    const wander = ctx.createOscillator();
+    wander.frequency.value = 0.11;
+    const wg = ctx.createGain();
+    wg.gain.value = 140;
+    wander.connect(wg).connect(howlBand.frequency);
+    wander.start();
+    const hg = ctx.createGain();
+    hg.gain.value = 0;
+    wind.connect(howlBand).connect(hg).connect(master);
+    wind.start();
+    this.howl = hg;
+    this.howlBand = howlBand;
+
+    // A slow pulse on the bed, quickening as you go in.
+    const pulse = ctx.createOscillator();
+    pulse.frequency.value = 0.4;
+    const pd = ctx.createGain();
+    pd.gain.value = 0;
+    pulse.connect(pd).connect(bed.gain);
+    pulse.start();
+    this.pulse = pulse;
+    this.pulseDepth = pd;
   }
 
   setMuted(m: boolean): void {
@@ -98,13 +176,26 @@ export class Sound {
     const ctx = this.ctx;
     if (!ctx || !this.bed || !this.bedFilter || !this.engine) return;
     const now = ctx.currentTime;
-    this.bed.gain.setTargetAtTime(live ? 0.1 + 0.42 * depth : 0, now, live ? 0.6 : 0.25);
+    this.bed.gain.setTargetAtTime(live ? 0.1 + 0.42 * depth : 0, now, live ? 0.6 : 0.05);
     this.bedFilter.frequency.setTargetAtTime(110 + 520 * depth * depth, now, 0.5);
     for (let i = 0; i < this.oscs.length; i++) {
       const base = [41.2, 61.9, 82.9, 123.1][i]!;
       this.oscs[i]!.frequency.setTargetAtTime(base * (1 - 0.22 * depth), now, 0.8);
     }
     this.engine.gain.setTargetAtTime(live ? 0.22 * burn : 0, now, 0.06);
+    if (this.voices && this.howl && this.howlBand && this.pulse && this.pulseDepth) {
+      const near = Math.max(0, (depth - 0.25) / 0.75);
+      const quick = live ? 0.7 : 0.05;
+      this.voices.gain.setTargetAtTime(live ? 0.16 * near ** 1.6 : 0, now, quick);
+      this.howl.gain.setTargetAtTime(live ? 1.5 * near ** 2.2 : 0, now, quick);
+      this.howlBand.frequency.setTargetAtTime(380 + 520 * near, now, 1.2);
+      this.pulse.frequency.setTargetAtTime(0.35 + 1.5 * near * near, now, 1);
+      this.pulseDepth.gain.setTargetAtTime(live ? 0.16 * near : 0, now, quick);
+      // The whole cluster sinks in pitch as you go deeper, like the light.
+      const sink = 1 - 0.2 * near;
+      const base = [155.6, 164.8, 220.0, 311.1, 329.6, 466.2];
+      for (let i = 0; i < this.voiceOscs.length; i++) this.voiceOscs[i]!.frequency.setTargetAtTime(base[i]! * sink, now, 1.5);
+    }
     if (!live || !ticking) return;
     // One tick per second of each clock, as the pilot hears them.
     this.shipPhase += dt;
