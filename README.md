@@ -23,7 +23,9 @@
 
 The picture is not a painting or a video. For every pixel, every frame, a ray of light is followed backwards through curved spacetime on your graphics card, so what you see is what a camera there would see: the black shadow, the thin ring of light around it, the far side of the disk bent up over the top.
 
-You start in orbit at a station. Brake and you fall towards the hole. The lower and faster you fly, the slower your clock runs against Earth's. Climb back out and the end card tells you how long you were gone, what date it now is at home, and what you missed. Go too low and you find out what the horizon is.
+The page opens on the view alone. Drag to look around it, scroll to move closer, and listen: the nearer you go, the colder it sounds, and inside the horizon there is no light and no sound at all. Then press **Play the game**.
+
+In the game you start in orbit at a station. Brake and you fall towards the hole. The lower and faster you fly, the slower your clock runs against Earth's. Climb back out and the end card tells you how long you were gone, what date it now is at home, and what you missed. Go too low and you find out what the horizon is.
 
 **Fly:** [pratyushshivam.github.io/event-horizon](https://pratyushshivam.github.io/event-horizon/)
 
@@ -31,11 +33,11 @@ You start in orbit at a station. Brake and you fall towards the hole. The lower 
 
 <p align="center"><sub>Eight seconds of one pass at about four radii from Sagittarius A*, recorded from the running page at real speed. Watch the two clocks at the top.</sub></p>
 
-There is nothing to read first. The page opens on the view with one line of words and a ghost finger showing the one control. There is no account, no server and no tracking. The code is about 30 kB; the sky it flies under is real and weighs 1.7 MB.
+There is nothing to read first. The page opens on the black hole with one line of words, drag to look around, and one button. The game adds one more line and a ghost finger showing the one control. There is no account, no server and no tracking. The code is about 30 kB; the sky it flies under is real and weighs 1.7 MB.
 
 <table>
 <tr>
-<td width="50%" valign="top"><img src="assets/first.gif" width="100%" alt="The first seconds. The black hole and its disk fill the screen, the ship sits in orbit, and one line says hold left to fall towards it, hold right to climb. The engine fires and the dashed circle of the orbit bends inward into a new path."><br><sub><b>The first seconds.</b> One line of words. Hold the key, the path ahead bends, let go and you coast along it.</sub></td>
+<td width="50%" valign="top"><img src="assets/first.gif" width="100%" alt="The first seconds. The black hole and its disk fill the screen under the words drag to look around and a button, Play the game. The view is dragged round the hole, the button is pressed, the camera glides down behind a small orange ship and the clocks and instruments appear."><br><sub><b>The first seconds.</b> Look around first. Play the game, and the camera glides down to the ship.</sub></td>
 <td width="50%" valign="top"><img src="assets/fall.gif" width="100%" alt="Falling in. The ship drops towards the shadow, the clock ratio climbs without limit, then the view cuts to outside: the ship is a dim red mark frozen at the edge of the shadow, fading."><br><sub><b>Too low.</b> The view cuts to what the station sees: your ship slowing, reddening and fading at the horizon, never crossing.</sub></td>
 </tr>
 <tr>
@@ -52,6 +54,7 @@ There is nothing to read first. The page opens on the view with one line of word
 
 | | |
 | :-- | :-- |
+| **Explore** | Where the page opens. Drag to look around, scroll or pinch to move in and out, as far as the inside of the horizon, where everything goes black and silent. **Play the game** starts a run; **Explore** in the top bar brings you back |
 | **Fall** | Hold `←` (or drag left and hold). The engine brakes, and the orbit drops towards the hole |
 | **Climb** | Hold `→` (or drag right). The engine pushes you along your orbit, and the far side of it rises |
 | **In and out** | `↑` pushes straight at the hole, `↓` straight away. You rarely need them |
@@ -64,9 +67,13 @@ There is nothing to read first. The page opens on the view with one line of word
 | **Rings** `R` | Names the horizon, the photon sphere and the innermost stable orbit |
 | **Orbit view** `V` | Step back and drag to look around. Keys still fly the ship |
 | **Photo** `P` | Hides everything, frees the camera, saves a 4K still |
-| **Sound** `M` | A bed that deepens as you go lower, and two ticks, your second and Earth's, drifting apart. Silence at the horizon |
+| **Sound** `M` | Made in the page, no recordings. A low bed that sinks as you go in; closer, a cluster of voices a semitone apart and a howl of filtered noise, with a pulse that quickens. In the game, two ticks, your second and Earth's, drifting apart. Inside the horizon, silence |
 
 The first run that works is one long brake, then nothing: the ship swings past the hole and coasts back to the ring on its own. Everything after that is nerve. Brake again at the bottom and you stay low, where the clocks run furthest apart, and have to buy your way back out.
+
+<a href="https://pratyushshivam.github.io/event-horizon/"><img src="assets/screens/explore.jpg" width="100%" alt="Where the page opens: the black hole and its disk with the Milky Way behind, a small orange ship in orbit, the words drag to look around, scroll or pinch to move closer, and one button, Play the game."></a>
+
+<p align="center"><sub>Where the page opens. Left alone, the view turns slowly on its own.</sub></p>
 
 ## Photographs
 
@@ -93,7 +100,7 @@ Photo mode stops time, hides the interface and frees the camera. Drag to look, s
 
 <table>
 <tr>
-<td width="33%" valign="top"><img src="assets/screens/phone-start.jpg" width="100%" alt="The opening at phone width: the black hole and disk in the middle, two clocks above, one line of instruction with a ghost finger, four instruments below."></td>
+<td width="33%" valign="top"><img src="assets/screens/phone-start.jpg" width="100%" alt="The opening at phone width: the black hole and disk in the middle, the words drag to look around, and the Play the game button."></td>
 <td width="33%" valign="top"><img src="assets/screens/phone-flight.jpg" width="100%" alt="Mid dive at phone width: the shadow fills the screen under the disk, and the clocks are minutes apart."></td>
 <td width="33%" valign="top"><img src="assets/screens/phone-end.jpg" width="100%" alt="The end card at phone width: Home, your clock, Earth's clock, and the minutes stolen."></td>
 </tr>
@@ -252,11 +259,16 @@ Measured in desktop Chrome on one laptop, flying a dive:
 - **The holes do not spin.** Real ones do. Spin flattens one side of the shadow, drags space round with it and moves the inner edge of the disk. That is the Kerr metric, and it is not here.
 - **The disk is a thin opaque sheet** with no thickness, and no light bouncing off it.
 - **The colours are chosen.** The physics of colour is right (blackbody, shifted by g, brightness by g⁴) but the temperature scale is set for eyes.
-- **The camera hovers.** It does not share the ship's speed, so the view is not squeezed forwards and brightened by the ship's own motion, and it never crosses the horizon. The ending tells you what you would see instead of showing it.
+- **The camera hovers.** It does not share the ship's speed, so the view is not squeezed forwards and brightened by the ship's own motion. Nothing can hover inside the horizon, so moving the camera in there simply shows black. The ending of a run tells you what you would see instead of showing it.
+- **The hole stands still.** Real black holes move, as everything does, but there is no drifting past the stars to see: see the note below.
 - **The sky is Earth's sky**, placed around each hole, with the even haze of unresolved stars taken off so that empty sky is black.
 - **The engine is absurd.** It gives 0.003 c²/r<sub>s</sub> at every hole so the flight feels the same. Around M87* that is 1.4 g. Around Sagittarius A* it is about 2,200 g, and around Cygnus X-1 far more. The ship is also drawn thousands of kilometres long.
 - **The tidal gauge** uses the stretch on a body falling straight in, and the hull's limit of 10,000 g per metre is a choice.
 - **Time is sped up or slowed** to five r<sub>s</sub>/c per second of play: about 210 times faster than life at Sagittarius A*, a thousand times slower at Cygnus X-1.
+
+### Does the black hole move?
+
+Yes. Sagittarius A* is carried round with the whole galaxy, and the galaxy itself moves at several hundred kilometres a second against the background of the universe. But motion only shows against something nearby, and the nearest stars are light years away. At 600 km/s it would take about 500 years to cross a single light year, so from beside the hole the sky would not visibly drift in a lifetime. What you would see moving is what the page shows: the disk turning, the ship and station orbiting, and the sky sliding as you yourself go round.
 
 ## Run it
 
