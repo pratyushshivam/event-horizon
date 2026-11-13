@@ -304,9 +304,9 @@ export class Renderer {
     this.bind(3, this.noiseTex, u.uNoiseTex!);
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 
-    // The ship and the station, added on top in linear light.
+    // The ship and the station, laid over the scene in linear light.
     gl.enable(gl.BLEND);
-    gl.blendFunc(gl.ONE, gl.ONE);
+    gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
     gl.useProgram(this.sprite.prog);
     const su = this.sprite.u;
     gl.uniform1f(su.uEncode!, this.float ? 0 : 1);
@@ -325,7 +325,7 @@ export class Renderer {
       gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
     };
     draw(s.station, 1, 9);
-    draw(s.ship, 0, 30);
+    draw(s.ship, 0, 66);
     gl.disable(gl.BLEND);
   }
 

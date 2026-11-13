@@ -284,6 +284,55 @@ a {
   color: var(--dim);
 }
 
+/* ------------------------------------------------------------------ explore */
+
+.explore {
+  position: absolute;
+  left: 50%;
+  bottom: calc(var(--pad) + var(--safe-b) + 6px);
+  transform: translateX(-50%);
+  width: max-content;
+  max-width: calc(100vw - 2 * var(--pad));
+  display: grid;
+  justify-items: center;
+  gap: 16px;
+  text-align: center;
+  z-index: 1;
+}
+
+.explore-hint {
+  font-size: clamp(15px, 1.5vw, 18px);
+  font-weight: 500;
+}
+
+.explore-sub {
+  font-size: 13px;
+  color: var(--dim);
+  max-width: 30em;
+}
+
+.btn-big {
+  font-size: clamp(17px, 1.7vw, 21px);
+  font-weight: 600;
+  padding: 15px 44px;
+  letter-spacing: 0.01em;
+  pointer-events: auto;
+}
+
+.ui:not(.exploring) .explore,
+.ui.exploring .clocks,
+.ui.exploring .bottom,
+.ui.exploring .hint,
+.ui.exploring .ghost,
+.ui.exploring #t-view,
+.ui.exploring #t-explore {
+  display: none;
+}
+
+.ui.exploring::after {
+  height: 42vh;
+}
+
 /* ------------------------------------------------------------------ hint, ghost, labels */
 
 .hint {

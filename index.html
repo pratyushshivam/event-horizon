@@ -40,6 +40,7 @@
 
         <nav class="tools" aria-label="Tools">
           <button class="tool" id="t-rings" type="button" aria-pressed="false">Rings</button>
+          <button class="tool" id="t-explore" type="button">Explore</button>
           <button class="tool" id="t-view" type="button">Orbit view</button>
           <button class="tool" id="t-photo" type="button">Photo</button>
           <button class="tool" id="t-physics" type="button">The physics</button>
@@ -52,6 +53,12 @@
           </button>
         </nav>
       </header>
+
+      <div class="explore" id="explore">
+        <p class="explore-hint">Drag to look around. Scroll or pinch to move closer.</p>
+        <button class="btn btn-big" id="play" type="button">Play the game</button>
+        <p class="explore-sub">Fly a ship past it. The lower you dare, the more time passes at home.</p>
+      </div>
 
       <p class="hint" id="hint" aria-live="polite"></p>
       <div class="ghost" id="ghost" aria-hidden="true"><i></i></div>
@@ -108,6 +115,7 @@
           <button class="btn" id="again" type="button">Fly again</button>
           <button class="btn btn-quiet" id="share" type="button">Share</button>
           <button class="btn btn-quiet" id="save-card" type="button">Save card</button>
+          <button class="btn btn-quiet" id="card-explore" type="button">Explore</button>
         </div>
       </div>
     </section>

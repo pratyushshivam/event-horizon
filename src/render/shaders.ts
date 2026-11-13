@@ -293,21 +293,26 @@ out vec4 outColor;
 uniform float uKind, uAngle, uGain, uBurn, uPlumeAngle, uFade, uEncode;
 uniform vec3 uTint;
 const vec3 ORANGE = vec3(0.658, 0.067, 0.010);
-float tri(vec2 p, float tip, float base, float halfW){
-  // 1 inside an isosceles triangle pointing along +x
-  float t = (p.x-base)/(tip-base);
-  float e = halfW*(1.-t);
-  float aa = .05;
-  return smoothstep(-aa,aa,t)*smoothstep(-aa,aa,1.-t)*smoothstep(aa,-aa,abs(p.y)-e);
-}
 void main(){
   vec3 c = vec3(0.);
+  float cover = 0.;
   float r = length(vP);
   if(uKind < .5){
     float ca = cos(-uAngle), sa = sin(-uAngle);
     vec2 p = mat2(ca,sa,-sa,ca)*vP*3.2;
-    float body = tri(p, 1., -.75, .62)*(1.-tri(p, -.1, -.8, .42));
-    c += ORANGE*(body*5. + exp(-r*r*9.)*.9);
+    // A small spaceplane seen from above: a tapered hull, two swept wings,
+    // a pale canopy near the nose and a hot engine at the tail.
+    float aa = .045, ax = p.x, ay = abs(p.y);
+    float hull = smoothstep(aa,-aa, ay - .16*(1.-smoothstep(.3,1.02,ax)))*smoothstep(-.74-aa,-.74+aa,ax)*smoothstep(1.02+aa,1.02-aa,ax);
+    float lead = .24 - 1.02*(ay-.1), trail = -.52 - .2*(ay-.1);
+    float wing = smoothstep(-aa,aa,lead-ax)*smoothstep(-aa,aa,ax-trail)*smoothstep(.68+aa,.68-aa,ay);
+    float tail = smoothstep(-aa,aa,(-.5-.7*(ay-.1))-ax)*smoothstep(-aa,aa,ax+.8)*smoothstep(.36+aa,.36-aa,ay);
+    float canopy = smoothstep(.1,.04,length(vec2((ax-.5)*.5, p.y)))*hull;
+    float engine = exp(-dot(p-vec2(-.8,0.),p-vec2(-.8,0.))*30.);
+    // The ship hides what is behind it, so its outline stays sharp over the bright disk.
+    cover = max(hull, max(wing, tail));
+    c += ORANGE*(hull*4.6 + max(wing, tail)*(1.-hull)*2.7) + ORANGE*exp(-r*r*14.)*.2;
+    c += vec3(0.887,0.855,0.783)*canopy*3.4 + vec3(1.,.72,.42)*engine*1.8;
     if(uBurn > 0.){
       float cb = cos(-uPlumeAngle), sb = sin(-uPlumeAngle);
       vec2 q = mat2(cb,sb,-sb,cb)*vP*3.2;
@@ -321,7 +326,7 @@ void main(){
   }
   c *= uGain*uFade;
   if(uEncode > .5) c = c/(1.+c);
-  outColor = vec4(c, 1.);
+  outColor = vec4(c, cover*uFade);
 }`;
 
 /** Bloom: a chain of halvings (13 taps each), then back up (9 taps each). */
